@@ -25,7 +25,7 @@ Ce répertoire contient le frontend de l'application GestionBudget, développé 
 
 1. **Cloner le dépôt :**
    ```bash
-   git clone https://github.com/gestionbudget/gestionbudget-frontend.git
+   git clone https://github.com/gestionbudget/frontend.git
    ```
 
 2. **Installer les dépendances :**
