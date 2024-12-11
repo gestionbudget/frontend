@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      '/transactions': 'http://localhost:3000',
+      '/transactions': 'https://backend-appjava.onrender.com',
     },
   },
 });

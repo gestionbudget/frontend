@@ -89,3 +89,6 @@ L'application utilise TailwindCSS pour styliser les composants d'interface utili
 ---
 
 N'hésitez pas à ajouter d'autres détails spécifiques à votre application ou à l'organiser différemment si besoin.
+
+
+ http://localhost:3000
