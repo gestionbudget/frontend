@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import axios from 'axios';
-import { ClipLoader } from 'react-spinners'; // Import du spinner
+import { transactionApi } from './api/axiosConfig';
+import { ClipLoader } from 'react-spinners';
 
 function App() {
   const [transactions, setTransactions] = useState([]);
@@ -13,43 +13,38 @@ function App() {
   
   const [descriptionError, setDescriptionError] = useState('');
   const [dateError, setDateError] = useState('');
-  
-  // Nouvel état pour gérer le chargement
   const [loading, setLoading] = useState(false);
 
   const formatDateForInput = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toISOString().split('T')[0]; // Format YYYY-MM-DD
+    return date.toISOString().split('T')[0];
   };
   
   useEffect(() => {
     fetchTransactions();
+    fetchTotalBalance();
   }, []);
   
   const fetchTransactions = async () => {
     try {
-      setLoading(true); // Début du chargement
-      const response = await axios.get('/transactions');
+      setLoading(true);
+      const response = await transactionApi.getAllTransactions();
       setTransactions(response.data);
-      calculateBalance(response.data);
     } catch (error) {
       console.error('Error fetching transactions', error);
     } finally {
-      setLoading(false); // Fin du chargement
+      setLoading(false);
     }
   };
 
-  const calculateBalance = (transactions) => {
-    let balance = 0;
-    transactions.forEach(transaction => {
-      if (transaction.type === 'REVENUE') {
-        balance += transaction.amount;
-      } else {
-        balance -= transaction.amount;
-      }
-    });
-    setTotalBalance(balance);
+  const fetchTotalBalance = async () => {
+    try {
+      const response = await transactionApi.getTotalBalance();
+      setTotalBalance(response.data);
+    } catch (error) {
+      console.error('Error fetching balance', error);
+    }
   };
 
   const validateDescription = (value) => {
@@ -84,25 +79,28 @@ function App() {
     }
 
     try {
-      setLoading(true); // Début du chargement
+      setLoading(true);
       const transaction = { description, type, amount, date };
       if (editingId) {
-        await axios.put(`/transactions/${editingId}`, transaction);
+        await transactionApi.updateTransaction(editingId, transaction);
       } else {
-        await axios.post('/transactions', transaction);
+        await transactionApi.addTransaction(transaction);
       }
+      
+      // Reset form and fetch updated data
       setEditingId(null);
-      fetchTransactions();
       setDescription('');
       setType('REVENUE');
       setAmount(0);
       setDate('');
-      setDescriptionError('');
-      setDateError('');
+      
+      // Refresh transactions and balance
+      await fetchTransactions();
+      await fetchTotalBalance();
     } catch (error) {
       console.error('Error saving transaction', error);
     } finally {
-      setLoading(false); // Fin du chargement
+      setLoading(false);
     }
   };
 
@@ -112,22 +110,22 @@ function App() {
     setType(transaction.type);
     setAmount(transaction.amount);
     setDate(formatDateForInput(transaction.date));
-    setDescriptionError('');
-    setDateError('');
   };
 
   const deleteTransaction = async (id) => {
     try {
-      setLoading(true); // Début du chargement
-      await axios.delete(`/transactions/${id}`);
-      fetchTransactions();
+      setLoading(true);
+      await transactionApi.deleteTransaction(id);
+      await fetchTransactions();
+      await fetchTotalBalance();
     } catch (error) {
       console.error('Error deleting transaction', error);
     } finally {
-      setLoading(false); // Fin du chargement
+      setLoading(false);
     }
   };
 
+  // Le reste du code de rendu reste identique à votre version précédente
   return (
     <div className="bg-gray-100 min-h-screen p-8">
       <div className="max-w-4xl mx-auto bg-white shadow-lg rounded-lg overflow-hidden">
@@ -189,7 +187,7 @@ function App() {
             <button 
               onClick={saveTransaction} 
               className="mt-4 w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
-              disabled={loading} // Disable button when loading
+              disabled={loading}
             >
               {loading ? <ClipLoader size={20} color="#fff" /> : (editingId ? 'Mettre à jour' : 'Ajouter')}
             </button>
@@ -197,7 +195,7 @@ function App() {
 
           {loading ? (
             <div className="flex justify-center my-4">
-              <ClipLoader size={50} color="#3498db" /> {/* Customizable size and color */}
+              <ClipLoader size={50} color="#3498db" />
             </div>
           ) : (
             <>
@@ -251,6 +249,5 @@ function App() {
     </div>
   );
 }
-
 
 export default App;
